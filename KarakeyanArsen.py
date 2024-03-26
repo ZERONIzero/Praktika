@@ -10,9 +10,12 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.tree import DecisionTreeRegressor
+import pingouin as pg
+import statsmodels.api as sm
 
-global X_X
+global X_X,R2_massiv
 X_X=[]
+R2_massiv=[]
 
 
 def make_graphic_ost(ishod_data,Y_prognoz_matrix):
@@ -121,6 +124,7 @@ def final(n,p,k,Y_prognoz_matrix,ishod_data,srez_massiv,matrix_koeff):
     print(" Стандартная ошибка регрессии SEY : "+str(sqrt((SST-SSR)/(n-p))))
     print(" F-статистика : "+str((SSR/k)/((SST-SSR)/(n-p))))
     print(" Коэффициент детерминации R^2 : "+str(SSR/SST))
+    R2_massiv.append(float(SSR/SST))
     print(" Скорректированный коэффициент детерминации R^2 adj : "+str(1-((SST-SSR)/(n-p))/(SST/(n-1))))
     matrix_ost_y=[]
     for i in range(len(matrix_y)):
@@ -159,6 +163,13 @@ def final(n,p,k,Y_prognoz_matrix,ishod_data,srez_massiv,matrix_koeff):
     for i in range(counter):
             buff=buff+"("+str(matrix_koeff[i+1])+")*X"+str(i+1)+" + "
     print(buff[:-2])
+    print("-"*100)
+    ishod_data=transpose_matrix(ishod_data)
+    df=pd.DataFrame(ishod_data)
+    y=df.iloc[:,-1:]
+    x=df.iloc[:,0:-1]
+    model=sm.OLS(y,x).fit()
+    print(model.summary())
     print("-"*100)
 
 
@@ -202,6 +213,7 @@ def print_standardized(ishod_data_new):
     matrix2=transpose_matrix(ishod_data_new)
     matrix2 = pd.DataFrame(matrix2,columns=['X1','X2','X3','X4','X5','X6','Y'])
     df_new = (matrix2-matrix2.mean ())/matrix2.std()
+    pd.set_option('display.max_rows',None)
     print("-"*100)
     print("Стандартизированные переменные (библиотека pandas) у, x1, x2, x3, x4, x5, x6 :")
     print(df_new)
@@ -506,6 +518,8 @@ if __name__=="__main__":
     p = len(ishod_data)
     k = len(ishod_data)-1
 
+    print_matrix(ishod_data)
+
     Pearson_correlation_coefficient_matrix=matrix_correlation(ishod_data,n)
     Pearson_correlation_coefficient_matrix1=pandas_Pearson_matrix(ishod_data)
 
@@ -540,6 +554,50 @@ if __name__=="__main__":
     buff_new=matrix_correlation(ishod_data_new,n)
     Student_t_distribution(buff_new,n,p)
     find_correlation(ishod_data_new,n,buff_new)
+
+    def diagonal(matrix):
+        diagonal_matrix=[[0.0]*len(matrix)]
+        for t in range(len(matrix)):
+            for t1 in range(len(matrix[t])):
+                if t==t1:
+                    diagonal_matrix[0][t1]=matrix[t][t1]
+                else:
+                    None
+        return diagonal_matrix
+
+    def chat_corr(matrix_corr,ishod_data):
+        real_matrix=[[0.0]*(len(matrix_corr[0])-1) for i in range(len(matrix_corr)-1)]
+        for i in range(len(real_matrix)):
+            for i1 in range(len(real_matrix[0])):
+                real_matrix[i][i1]=matrix_corr[i][i1]
+        # print(real_matrix)
+        Vi = inverse(real_matrix)
+        # print(Vi)
+        buff=diagonal(Vi)
+        # print(buff)
+        for h in range(len(buff[0])):
+            buff[0][h]=sqrt(1.0 / float(buff[0][h]))
+        D=[[0.0]*len(buff[0]) for k in range(len(buff[0]))]
+        for n in range(len(D)):
+            # nn=transpose_matrix(ishod_data)
+            # matrix_corr1 = pd.DataFrame(nn)
+            # buff3=matrix_corr1.pcorr()
+            for n1 in range(len(D[n])):
+                if n==n1:
+                    D[n][n1]=buff[0][n1]
+                else:
+                    None
+        buff1=mul_matrix(D,Vi)
+        buff2=mul_matrix(buff1,D)
+        for k in range(len(buff2)):
+            for k1 in range(len(buff2[k])):
+                buff2[k][k1]=float(buff2[k][k1]*(-1))
+                if k==k1:
+                    buff2[k][k1]=float(1)
+        return buff2
+    
+    # print("*"*100)
+    # print_matrix(chat_corr(Pearson_correlation_coefficient_matrix,ishod_data))
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # рассчитывание модельных значений после отбора
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------  
@@ -577,6 +635,11 @@ if __name__=="__main__":
     print_prognoz_Y(massiv_prognoz_Y_new)
 
     final(n_new,p_new,k_new,massiv_prognoz_Y_new,result_matrix_new,massiv_average_value_new,b_coeff_new)
+
+    result_matrix_buff=transpose_matrix(result_matrix)
+    result_matrix_buff=pd.DataFrame(result_matrix_buff)
+    pg.pairwise_corr(result_matrix_buff)
+    
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # рассчитывание модельных значений после отбора и методом KNeighborsRegressor
@@ -646,6 +709,7 @@ if __name__=="__main__":
     sey=sqrt((sse)/(len(y_pred)-2))
     print(f"Стандартная ошибка регрессии SEY : {sey}")
     print(f'Коэффициент детерминации R^2 : {regressor.score(X_test, y_test)}')
+    R2_massiv.append(float(regressor.score(X_test, y_test)))
     sst = float(((y - y.mean()) ** 2).sum())
     print(f"Общая сумма квадратов SST : {sst*10}")
     print(f"Регрессия суммы квадратов SSR : {(sst-sse)*10}")
@@ -707,10 +771,22 @@ if __name__=="__main__":
     sey_new=sqrt((sse_new)/(len(y1_pred)-2))
     print(f"Стандартная ошибка регрессии SEY : {sey_new}")
     print(f'Коэффициент детерминации R^2 : {treeRegressor.score(X1_test, Y1_test)}')
+    R2_massiv.append(float(regressor.score(X_test, y_test)))
     sst_new = float(((Y1 - Y1.mean()) ** 2).sum())
-    print(f"Общая сумма квадратов SST : {sst_new}")
-    print(f"Регрессия суммы квадратов SSR : {(sst_new-sse_new)}")
+    print(f"Общая сумма квадратов SST : {sst_new/100}")
+    print(f"Регрессия суммы квадратов SSR : {(sst_new-sse_new)/100}")
     print(f"F-статисттка : {(((sst_new-sse_new)/(len(y1_pred)-1))/((sst_new-(sst_new-sse_new))/(len(y1_pred)-2)))*10}")
     
     make_graphic_ost(result_matrix,massiv_prognoz_Y_new)
+    # print(R2_massiv)
+    best=0.0
+    for i in range(len(R2_massiv)):
+        if (best <= R2_massiv[i]):
+            best=i
+    if (best==0 or best==1):
+        print("Лучшая модель линейная")
+    if (best==2):
+        print("Лучшая модель KNeighbors")
+    if (best==3):
+        print("Лучшая модель DecisionTree")
 
