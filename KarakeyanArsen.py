@@ -65,9 +65,12 @@ def Student_t_distribution(matrix_corr,n,p):
     DF=n-p
     Student_DF=2.642983063369744
     i=len(matrix_corr)-1
+    print(i)
     matrix_t_see=[[0.0]*i]
+    print(len(matrix_corr[i])-1)
     for i1 in range(len(matrix_corr[i])-1):
         matrix_t_see[0][i1]=float(abs(matrix_corr[i][i1])*((sqrt(DF-1))/(sqrt(1-matrix_corr[i][i1]*matrix_corr[i][i1]))))
+        # print(matrix_t_see)
         if matrix_t_see[0][i1]>Student_DF:
             print("Коэффициент X"+str(i1+1)+" корреляции статистически значим")
         else:
@@ -203,6 +206,8 @@ def matrix_library_regression(ishod_data_new):
     model = LinearRegression().fit(X, Y)
     coef_sklearn = model.coef_.T
     print(f'Коэффициенты рассчитанные с использованием библиотеки sklearn {coef_sklearn.T[0]}')
+    t=coef_sklearn.T[0]
+    print(t[1])
 
 
 def print_standardized(ishod_data_new):
@@ -555,52 +560,52 @@ if __name__=="__main__":
     Student_t_distribution(buff_new,n,p)
     find_correlation(ishod_data_new,n,buff_new)
 
-    def diagonal(matrix):
-        diagonal_matrix=[[0.0]*len(matrix)]
-        for t in range(len(matrix)):
-            for t1 in range(len(matrix[t])):
-                if t==t1:
-                    diagonal_matrix[0][t1]=matrix[t][t1]
-                else:
-                    None
-        return diagonal_matrix
+#     def diagonal(matrix):
+#         diagonal_matrix=[[0.0]*len(matrix)]
+#         for t in range(len(matrix)):
+#             for t1 in range(len(matrix[t])):
+#                 if t==t1:
+#                     diagonal_matrix[0][t1]=matrix[t][t1]
+#                 else:
+#                     None
+#         return diagonal_matrix
 
-    def chat_corr(matrix_corr,ishod_data):
-        real_matrix=[[0.0]*(len(matrix_corr[0])-1) for i in range(len(matrix_corr)-1)]
-        for i in range(len(real_matrix)):
-            for i1 in range(len(real_matrix[0])):
-                real_matrix[i][i1]=matrix_corr[i][i1]
-        # print(real_matrix)
-        Vi = inverse(real_matrix)
-        # print(Vi)
-        buff=diagonal(Vi)
-        # print(buff)
-        for h in range(len(buff[0])):
-            buff[0][h]=sqrt(1.0 / float(buff[0][h]))
-        D=[[0.0]*len(buff[0]) for k in range(len(buff[0]))]
-        for n in range(len(D)):
-            # nn=transpose_matrix(ishod_data)
-            # matrix_corr1 = pd.DataFrame(nn)
-            # buff3=matrix_corr1.pcorr()
-            for n1 in range(len(D[n])):
-                if n==n1:
-                    D[n][n1]=buff[0][n1]
-                else:
-                    None
-        buff1=mul_matrix(D,Vi)
-        buff2=mul_matrix(buff1,D)
-        for k in range(len(buff2)):
-            for k1 in range(len(buff2[k])):
-                buff2[k][k1]=float(buff2[k][k1]*(-1))
-                if k==k1:
-                    buff2[k][k1]=float(1)
-        return buff2
+#     def chat_corr(matrix_corr,ishod_data):
+#         real_matrix=[[0.0]*(len(matrix_corr[0])-1) for i in range(len(matrix_corr)-1)]
+#         for i in range(len(real_matrix)):
+#             for i1 in range(len(real_matrix[0])):
+#                 real_matrix[i][i1]=matrix_corr[i][i1]
+#         # print(real_matrix)
+#         Vi = inverse(real_matrix)
+#         # print(Vi)
+#         buff=diagonal(Vi)
+#         # print(buff)
+#         for h in range(len(buff[0])):
+#             buff[0][h]=sqrt(1.0 / float(buff[0][h]))
+#         D=[[0.0]*len(buff[0]) for k in range(len(buff[0]))]
+#         for n in range(len(D)):
+#             # nn=transpose_matrix(ishod_data)
+#             # matrix_corr1 = pd.DataFrame(nn)
+#             # buff3=matrix_corr1.pcorr()
+#             for n1 in range(len(D[n])):
+#                 if n==n1:
+#                     D[n][n1]=buff[0][n1]
+#                 else:
+#                     None
+#         buff1=mul_matrix(D,Vi)
+#         buff2=mul_matrix(buff1,D)
+#         for k in range(len(buff2)):
+#             for k1 in range(len(buff2[k])):
+#                 buff2[k][k1]=float(buff2[k][k1]*(-1))
+#                 if k==k1:
+#                     buff2[k][k1]=float(1)
+#         return buff2
     
-    # print("*"*100)
-    # print_matrix(chat_corr(Pearson_correlation_coefficient_matrix,ishod_data))
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# рассчитывание модельных значений после отбора
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------  
+#     # print("*"*100)
+#     # print_matrix(chat_corr(Pearson_correlation_coefficient_matrix,ishod_data))
+# #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# # рассчитывание модельных значений после отбора
+# #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------  
     print("-"*100)
     print("рассчитывание модельных значений после отбора")
     
@@ -609,7 +614,8 @@ if __name__=="__main__":
         for line in f:
             result_matrix.append([float(x) for x in line.split()])
     
-    del result_matrix[X_X[0]]
+    del result_matrix[X_X[0]],result_matrix[3]
+    del result_matrix[3]
     n_new = len(result_matrix[0])
     p_new = len(result_matrix)
     k_new = len(result_matrix)-1
@@ -778,7 +784,7 @@ if __name__=="__main__":
     print(f"F-статисттка : {(((sst_new-sse_new)/(len(y1_pred)-1))/((sst_new-(sst_new-sse_new))/(len(y1_pred)-2)))*10}")
     
     make_graphic_ost(result_matrix,massiv_prognoz_Y_new)
-    # print(R2_massiv)
+    
     best=0.0
     for i in range(len(R2_massiv)):
         if (best <= R2_massiv[i]):
